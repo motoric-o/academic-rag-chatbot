@@ -1,0 +1,13 @@
+# Global defaults (Member C owns; see docs/project_spec.md §4, §7.4, §13)
+seed: 42
+corpus_path: "data/source_en/corpus.json"
+eval_set_path: "data/eval/eval_set.jsonl"
+contexts_cache_path: "data/cache/contexts.jsonl"
+oracle_cache_path: "data/cache/contexts_oracle.jsonl"
+prompt_template: "configs/prompts/rag_v1.yaml"
+
+generation:
+  temperature: 0.0
+  do_sample: false
+  max_new_tokens: 256
+  repeats: 3

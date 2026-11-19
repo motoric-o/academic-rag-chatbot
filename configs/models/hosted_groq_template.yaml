@@ -1,0 +1,20 @@
+# Member C owns hosted model configs (see docs/project_spec.md §7.2)
+# Confirm exact model IDs and rate limits in the Groq console before running.
+name: "groq-gpt-oss-20b"
+family: "gpt-oss"
+provider: "hosted_openai_compat"
+base_url: "https://api.groq.com/openai/v1"
+api_key_env: "GROQ_API_KEY"
+model_id: "openai/gpt-oss-20b"  # [VERIFY] confirm in Groq console
+params_b: 20.0                  # [VERIFY]
+active_params_b: null           # [VERIFY] MoE active parameters
+precision: "hosted"
+generation:
+  temperature: 0.0
+  max_new_tokens: 256
+  reasoning_effort: "low"       # [VERIFY] lowest supported effort
+rate_limits:
+  rpm: 30
+  rpd: 1000
+  tpm: 8000
+  tpd: 200000

@@ -1,0 +1,17 @@
+# E1: Parameter ladder (RQ1) - L-uniform (4-bit) and L-best
+name: "e1_param_ladder"
+description: "Qwen3 parameter scaling ladder under L-uniform and L-best"
+split: "test"
+use_context: true
+repeats: 3
+models:
+  # L-uniform (4-bit NF4, RTX 3070 reproducible)
+  - "configs/models/local_qwen3_0.6b_4bit.yaml"
+  - "configs/models/local_qwen3_1.7b_4bit.yaml"
+  - "configs/models/local_qwen3_4b_4bit.yaml"
+  - "configs/models/local_qwen3_8b_4bit.yaml"
+  # Additional L-best precisions
+  - "configs/models/local_qwen3_0.6b_fp16.yaml"
+  - "configs/models/local_qwen3_1.7b_fp16.yaml"
+  - "configs/models/local_qwen3_4b_fp16.yaml"
+  - "configs/models/local_qwen3_8b_8bit.yaml"

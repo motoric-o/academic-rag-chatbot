@@ -1,0 +1,18 @@
+# Member A owns configs/models/local_* (see docs/project_spec.md §7.1)
+# Note: 8B 8-bit requires Colab T4 (~15 GB); RTX 3070 (8 GB) runs 8B at 4-bit only.
+name: "qwen3-8b-8bit"
+family: "qwen3"
+provider: "local_hf"
+hf_model_id: "Qwen/Qwen3-8B"  # [VERIFY] ~8.2B params; pin exact revision hash once verified
+revision: null
+params_b: 8.2
+active_params_b: 8.2
+precision: "8bit"
+quantization:
+  method: "bitsandbytes_int8"
+generation:
+  enable_thinking: false
+  temperature: 0.0
+  do_sample: false
+  max_new_tokens: 256
+target_hardware: "colab_t4_15gb"

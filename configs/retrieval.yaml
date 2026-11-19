@@ -1,0 +1,19 @@
+# Chunking and retrieval parameters (Member B owns; see docs/project_spec.md §5.1 & §6)
+embedding_model: "BAAI/bge-m3"  # [VERIFY] lock before running chunk calibration
+chunk_tokenizer: "BAAI/bge-m3"
+budget_tokenizer: "Qwen/Qwen3-0.6B"  # conservative tokenizer for prompt budget check
+
+chunking:
+  candidates: [128, 256, 384, 512]
+  max_chunk_tokens: null  # set by scripts / calibrate_chunks.py (§5.1)
+  overlap_ratio: 0.12
+  header_template: "[Chapter {chapter} > Article {article}]"
+
+retrieval:
+  method: "hybrid_rrf"
+  rrf_k: 60
+  faiss_index: "IndexFlatIP"
+  normalize_embeddings: true
+  cache_k: 5
+  top_k_context: 4
+  prompt_token_budget: 2500

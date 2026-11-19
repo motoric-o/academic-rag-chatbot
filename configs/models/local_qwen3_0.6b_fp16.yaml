@@ -1,0 +1,16 @@
+# Member A owns configs/models/local_* (see docs/project_spec.md §7.1)
+name: "qwen3-0.6b-fp16"
+family: "qwen3"
+provider: "local_hf"
+hf_model_id: "Qwen/Qwen3-0.6B"  # [VERIFY] pin exact revision hash once verified
+revision: null
+params_b: 0.6
+active_params_b: 0.6
+precision: "fp16"
+quantization: null
+generation:
+  enable_thinking: false
+  temperature: 0.0
+  do_sample: false
+  max_new_tokens: 256
+target_hardware: "rtx3070_8gb"

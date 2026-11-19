@@ -1,0 +1,13 @@
+# Example local GPU run request for Member A (see docs/project_spec.md §0.4)
+# Copy this file to docs/run_requests/<id>_<short_name>.yaml when requesting a run.
+
+request_id: "example_001"
+requested_by: "C"
+date: "2026-11-19"
+experiment: "configs/experiments/e1_param_ladder.yaml"
+models:
+  - "configs/models/local_qwen3_0.6b_4bit.yaml"
+split: "dev"
+repeats: 1
+priority: "low"
+notes: "Example template — not an active run request."

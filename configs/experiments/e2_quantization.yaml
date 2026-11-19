@@ -1,0 +1,17 @@
+# E2: Quantization study (RQ2)
+name: "e2_quantization"
+description: "fp16 vs 8-bit vs 4-bit at fixed Qwen3 sizes"
+split: "test"
+use_context: true
+repeats: 3
+models:
+  - "configs/models/local_qwen3_0.6b_fp16.yaml"
+  - "configs/models/local_qwen3_0.6b_4bit.yaml"
+  - "configs/models/local_qwen3_1.7b_fp16.yaml"
+  - "configs/models/local_qwen3_1.7b_8bit.yaml"
+  - "configs/models/local_qwen3_1.7b_4bit.yaml"
+  - "configs/models/local_qwen3_4b_fp16.yaml"
+  - "configs/models/local_qwen3_4b_8bit.yaml"
+  - "configs/models/local_qwen3_4b_4bit.yaml"
+  - "configs/models/local_qwen3_8b_8bit.yaml"
+  - "configs/models/local_qwen3_8b_4bit.yaml"

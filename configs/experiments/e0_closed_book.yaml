@@ -1,0 +1,11 @@
+# E0: Closed-book anchor on dev answerable questions (no context)
+# Member C owns experiment configs; Member A runs local models.
+name: "e0_closed_book"
+description: "Closed-book anchor on dev answerable questions (exploratory)"
+split: "dev"
+answerable_only: true
+use_context: false
+repeats: 3
+models:
+  - "configs/models/local_qwen3_0.6b_4bit.yaml"
+  - "configs/models/local_qwen3_8b_4bit.yaml"
