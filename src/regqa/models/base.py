@@ -58,10 +58,12 @@ class MockAdapter(ModelAdapter):
         model: str = "mock-model",
         precision: str = "mock",
         canned_response: str = "NOT_FOUND",
+        responses_by_question: dict[str, str] | None = None,
     ) -> None:
         self.model = model
         self.precision = precision
         self.canned_response = canned_response
+        self.responses_by_question = responses_by_question or {}
 
     def generate(
         self,
@@ -69,10 +71,18 @@ class MockAdapter(ModelAdapter):
         gen_config: GenerationConfig,
     ) -> GenerationResult:
         prompt_tokens = sum(len(m.get("content", "").split()) for m in messages)
+        user_msg = next((m.get("content", "") for m in reversed(messages) if m.get("role") == "user"), "")
+        
+        output = self.canned_response
+        for q, resp in self.responses_by_question.items():
+            if q.lower() in user_msg.lower():
+                output = resp
+                break
+
         return GenerationResult(
-            raw_output=self.canned_response,
+            raw_output=output,
             tokens_in=prompt_tokens,
-            tokens_out=len(self.canned_response.split()),
+            tokens_out=len(output.split()),
             latency_s=0.001,
             model=self.model,
             precision=self.precision,

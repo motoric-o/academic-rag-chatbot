@@ -71,4 +71,4 @@ lint:
 	cd frontend && npm run lint
 
 check-api:
-	@echo "TODO (Member C & D): export openapi.json and verify frontend/src/api/ is in sync."
+	$(PYTHON) scripts/export_openapi.py
