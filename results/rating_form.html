@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Academic Regulation QA — Human Rating Form</title>
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --border: #e2e8f0;
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --score-0: #ef4444;
+      --score-1: #f59e0b;
+      --score-2: #10b981;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      padding: 24px;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    header {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px 24px;
+      margin-bottom: 20px;
+    }
+    h1 { font-size: 1.25rem; font-weight: 700; margin-bottom: 4px; }
+    p.subtitle { font-size: 0.875rem; color: var(--text-muted); }
+    .setup-bar {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      margin-top: 14px;
+      flex-wrap: wrap;
+    }
+    label { font-size: 0.8125rem; font-weight: 600; }
+    input[type="text"], input[type="file"], select {
+      font-size: 0.875rem;
+      padding: 6px 12px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: #fff;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 20px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+    .progress-bar {
+      background: #e2e8f0;
+      height: 6px;
+      border-radius: 3px;
+      overflow: hidden;
+      margin-bottom: 16px;
+    }
+    .progress-fill {
+      background: var(--primary);
+      height: 100%;
+      width: 0%;
+      transition: width 0.3s;
+    }
+    .meta-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.8125rem;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+    }
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      background: #f1f5f9;
+      color: #475569;
+    }
+    .section-title {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+    .answer-box {
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px 16px;
+      font-size: 0.9375rem;
+      margin-bottom: 20px;
+      white-space: pre-wrap;
+    }
+    .rating-options {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .rating-btn {
+      border: 2px solid var(--border);
+      background: #fff;
+      padding: 14px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.2s;
+    }
+    .rating-btn:hover { border-color: var(--primary); }
+    .rating-btn.active-0 { border-color: var(--score-0); background: #fef2f2; }
+    .rating-btn.active-1 { border-color: var(--score-1); background: #fffbeb; }
+    .rating-btn.active-2 { border-color: var(--score-2); background: #ecfdf5; }
+    .rating-num { font-size: 1.25rem; font-weight: 800; }
+    .rating-label { font-size: 0.8125rem; font-weight: 600; margin-top: 2px; }
+    .rating-desc { font-size: 0.75rem; color: var(--text-muted); margin-top: 4px; }
+    .notes-box {
+      width: 100%;
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 0.875rem;
+      resize: vertical;
+      min-height: 60px;
+      margin-bottom: 20px;
+    }
+    .nav-buttons {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    button.btn {
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid var(--border);
+      background: #fff;
+      transition: all 0.2s;
+    }
+    button.btn-primary {
+      background: var(--primary);
+      color: #fff;
+      border-color: var(--primary);
+    }
+    button.btn-primary:hover { background: var(--primary-hover); }
+    button.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>📝 Academic Regulation QA — Form Penilaian Manusia</h1>
+      <p class="subtitle">Skala Penilaian: 0 = Salah/Halusinasi · 1 = Sebagian Benar · 2 = Benar & Lengkap</p>
+      
+      <div class="setup-bar">
+        <label>
+          Inisial Rater:
+          <select id="raterSelect">
+            <option value="D">Member D</option>
+            <option value="A">Member A</option>
+            <option value="B">Member B</option>
+            <option value="C">Member C</option>
+          </select>
+        </label>
+        <button class="btn btn-primary" id="btnExport" onclick="exportCSV()">⬇ Export CSV</button>
+      </div>
+    </header>
+
+    <div class="card" id="ratingCard">
+      <div class="progress-bar">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
+      
+      <div class="meta-row">
+        <span>Pertanyaan <b id="currentIndex">1</b> dari <b id="totalCount">10</b></span>
+        <div>
+          <span class="badge" id="qidBadge">fixture_01</span>
+          <span class="badge" id="modelBadge">mock-model</span>
+          <span class="badge" id="precisionBadge">4-bit</span>
+        </div>
+      </div>
+
+      <div class="section-title">Jawaban Model AI</div>
+      <div class="answer-box" id="answerBox">Loading...</div>
+
+      <div class="section-title">Beri Skor Penilaian</div>
+      <div class="rating-options">
+        <div class="rating-btn" id="btn0" onclick="setRating(0)">
+          <div class="rating-num" style="color: var(--score-0);">0</div>
+          <div class="rating-label">Salah / Halusinasi</div>
+          <div class="rating-desc">Fakta keliru, kontradiksi, atau salah angka</div>
+        </div>
+        <div class="rating-btn" id="btn1" onclick="setRating(1)">
+          <div class="rating-num" style="color: var(--score-1);">1</div>
+          <div class="rating-label">Sebagian Benar</div>
+          <div class="rating-desc">Benar tapi kurang lengkap / kurang spesifik</div>
+        </div>
+        <div class="rating-btn" id="btn2" onclick="setRating(2)">
+          <div class="rating-num" style="color: var(--score-2);">2</div>
+          <div class="rating-label">Benar & Lengkap</div>
+          <div class="rating-desc">Semua fakta akurat sesuai peraturan</div>
+        </div>
+      </div>
+
+      <div class="section-title">Catatan Tambahan (Opsional)</div>
+      <textarea class="notes-box" id="notesInput" placeholder="Tulis catatan jika ada..." oninput="saveCurrent()"></textarea>
+
+      <div class="nav-buttons">
+        <button class="btn" id="btnPrev" onclick="prevItem()" disabled>← Sebelumnya</button>
+        <button class="btn btn-primary" id="btnNext" onclick="nextItem()">Selanjutnya →</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Data bawaan dari human_rating_template.csv
+    let items = [
+      { qid: "fixture_01", model: "mock-model", precision: "4-bit", answer: "Up to three consecutive terms.", rating: "", notes: "" },
+      { qid: "fixture_02", model: "mock-model", precision: "4-bit", answer: "Use the student portal, then obtain an advisor's approval.", rating: "", notes: "" },
+      { qid: "fixture_03", model: "mock-model", precision: "4-bit", answer: "The course outline and an official transcript.", rating: "", notes: "" },
+      { qid: "fixture_04", model: "mock-model", precision: "4-bit", answer: "No. Courses must be graded B or higher.", rating: "", notes: "" },
+      { qid: "fixture_05", model: "mock-model", precision: "4-bit", answer: "At least 84 credit units.", rating: "", notes: "" },
+      { qid: "fixture_06", model: "mock-model", precision: "4-bit", answer: "The workplace mentor.", rating: "", notes: "" },
+      { qid: "fixture_07", model: "mock-model", precision: "4-bit", answer: "At least 84 credit units. Registration closes on April 15.", rating: "", notes: "" },
+      { qid: "fixture_08", model: "mock-model", precision: "4-bit", answer: "14 days after the placement ends.", rating: "", notes: "" },
+      { qid: "fixture_09", model: "mock-model", precision: "4-bit", answer: "NOT_FOUND", rating: "", notes: "" },
+      { qid: "fixture_10", model: "mock-model", precision: "4-bit", answer: "NOT_FOUND", rating: "", notes: "" }
+    ];
+
+    let currentIndex = 0;
+
+    function renderCurrent() {
+      const item = items[currentIndex];
+      document.getElementById("currentIndex").innerText = currentIndex + 1;
+      document.getElementById("totalCount").innerText = items.length;
+      document.getElementById("progressFill").style.width = ((currentIndex + 1) / items.length * 100) + "%";
+
+      document.getElementById("qidBadge").innerText = item.qid;
+      document.getElementById("modelBadge").innerText = item.model;
+      document.getElementById("precisionBadge").innerText = item.precision;
+      document.getElementById("answerBox").innerText = item.answer;
+      document.getElementById("notesInput").value = item.notes || "";
+
+      // Update active button state
+      [0, 1, 2].forEach(num => {
+        const btn = document.getElementById("btn" + num);
+        btn.className = "rating-btn" + (item.rating === num || item.rating === String(num) ? " active-" + num : "");
+      });
+
+      document.getElementById("btnPrev").disabled = (currentIndex === 0);
+      document.getElementById("btnNext").innerText = (currentIndex === items.length - 1) ? "Selesai (Export CSV)" : "Selanjutnya →";
+    }
+
+    function setRating(val) {
+      items[currentIndex].rating = val;
+      renderCurrent();
+      if (currentIndex < items.length - 1) {
+        setTimeout(nextItem, 250);
+      }
+    }
+
+    function saveCurrent() {
+      items[currentIndex].notes = document.getElementById("notesInput").value;
+    }
+
+    function prevItem() {
+      saveCurrent();
+      if (currentIndex > 0) {
+        currentIndex--;
+        renderCurrent();
+      }
+    }
+
+    function nextItem() {
+      saveCurrent();
+      if (currentIndex < items.length - 1) {
+        currentIndex++;
+        renderCurrent();
+      } else {
+        exportCSV();
+      }
+    }
+
+    function exportCSV() {
+      saveCurrent();
+      const rater = document.getElementById("raterSelect").value;
+      const headers = ["qid", "model", "precision", "answer", "rating", "rater", "notes"];
+      const rows = items.map(it => [
+        it.qid,
+        it.model,
+        it.precision,
+        '"' + it.answer.replace(/"/g, '""') + '"',
+        it.rating !== "" ? it.rating : "",
+        rater,
+        '"' + (it.notes || "").replace(/"/g, '""') + '"'
+      ]);
+
+      const csvContent = [headers.join(","), ...rows.map(r => r.join(","))].join("\r\n");
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `ratings_${rater}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    // Keyboard shortcuts (0, 1, 2, ArrowLeft, ArrowRight)
+    document.addEventListener("keydown", (e) => {
+      if (e.target.tagName === "TEXTAREA" || e.target.tagName === "INPUT") return;
+      if (e.key === "0") setRating(0);
+      if (e.key === "1") setRating(1);
+      if (e.key === "2") setRating(2);
+      if (e.key === "ArrowLeft") prevItem();
+      if (e.key === "ArrowRight") nextItem();
+    });
+
+    renderCurrent();
+  </script>
+</body>
+</html>
