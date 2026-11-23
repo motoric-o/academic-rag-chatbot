@@ -197,8 +197,14 @@
         </div>
       </div>
 
+      <div class="section-title">Pertanyaan</div>
+      <div class="answer-box" id="questionBox" style="background:#eef2ff; border-color:#c7d2fe;">Loading...</div>
+
       <div class="section-title">Jawaban Model AI</div>
       <div class="answer-box" id="answerBox">Loading...</div>
+
+      <div class="section-title">Jawaban Referensi (Gold Answer)</div>
+      <div class="answer-box" id="goldBox" style="background:#ecfdf5; border-color:#a7f3d0; font-style:italic;">Loading...</div>
 
       <div class="section-title">Beri Skor Penilaian</div>
       <div class="rating-options">
@@ -232,16 +238,16 @@
   <script>
     // Data bawaan dari human_rating_template.csv
     let items = [
-      { qid: "fixture_01", model: "mock-model", precision: "4-bit", answer: "Up to three consecutive terms.", rating: "", notes: "" },
-      { qid: "fixture_02", model: "mock-model", precision: "4-bit", answer: "Use the student portal, then obtain an advisor's approval.", rating: "", notes: "" },
-      { qid: "fixture_03", model: "mock-model", precision: "4-bit", answer: "The course outline and an official transcript.", rating: "", notes: "" },
-      { qid: "fixture_04", model: "mock-model", precision: "4-bit", answer: "No. Courses must be graded B or higher.", rating: "", notes: "" },
-      { qid: "fixture_05", model: "mock-model", precision: "4-bit", answer: "At least 84 credit units.", rating: "", notes: "" },
-      { qid: "fixture_06", model: "mock-model", precision: "4-bit", answer: "The workplace mentor.", rating: "", notes: "" },
-      { qid: "fixture_07", model: "mock-model", precision: "4-bit", answer: "At least 84 credit units. Registration closes on April 15.", rating: "", notes: "" },
-      { qid: "fixture_08", model: "mock-model", precision: "4-bit", answer: "14 days after the placement ends.", rating: "", notes: "" },
-      { qid: "fixture_09", model: "mock-model", precision: "4-bit", answer: "NOT_FOUND", rating: "", notes: "" },
-      { qid: "fixture_10", model: "mock-model", precision: "4-bit", answer: "NOT_FOUND", rating: "", notes: "" }
+      { qid: "fixture_01", model: "mock-model", precision: "4-bit", question: "How long may academic leave last?", answer: "Up to three consecutive terms.", gold_answer: "Up to three consecutive terms.", rating: "", notes: "" },
+      { qid: "fixture_02", model: "mock-model", precision: "4-bit", question: "How does a student request leave?", answer: "Use the student portal, then obtain an advisor's approval.", gold_answer: "Use the student portal, then obtain an advisor's approval.", rating: "", notes: "" },
+      { qid: "fixture_03", model: "mock-model", precision: "4-bit", question: "What documents are needed for credit transfer?", answer: "The course outline and an official transcript.", gold_answer: "The course outline and an official transcript.", rating: "", notes: "" },
+      { qid: "fixture_04", model: "mock-model", precision: "4-bit", question: "Is a course graded C eligible for credit transfer?", answer: "No. Courses must be graded B or higher.", gold_answer: "No. Courses must be graded B or higher.", rating: "", notes: "" },
+      { qid: "fixture_05", model: "mock-model", precision: "4-bit", question: "How many credit units are needed for internship registration?", answer: "At least 84 credit units.", gold_answer: "At least 84 credit units.", rating: "", notes: "" },
+      { qid: "fixture_06", model: "mock-model", precision: "4-bit", question: "Who signs the weekly internship log?", answer: "The workplace mentor.", gold_answer: "The workplace mentor.", rating: "", notes: "" },
+      { qid: "fixture_07", model: "mock-model", precision: "4-bit", question: "What is the credit requirement and registration deadline for the internship?", answer: "At least 84 credit units. Registration closes on April 15.", gold_answer: "At least 84 credit units. Registration closes on April 15.", rating: "", notes: "" },
+      { qid: "fixture_08", model: "mock-model", precision: "4-bit", question: "When is the final internship report due?", answer: "14 days after the placement ends.", gold_answer: "14 days after the placement ends.", rating: "", notes: "" },
+      { qid: "fixture_09", model: "mock-model", precision: "4-bit", question: "What is the fee for applying for academic leave?", answer: "NOT_FOUND", gold_answer: "NOT_FOUND", rating: "", notes: "" },
+      { qid: "fixture_10", model: "mock-model", precision: "4-bit", question: "Can the internship report be submitted late with a mentor's approval?", answer: "NOT_FOUND", gold_answer: "NOT_FOUND", rating: "", notes: "" }
     ];
 
     let currentIndex = 0;
@@ -255,7 +261,9 @@
       document.getElementById("qidBadge").innerText = item.qid;
       document.getElementById("modelBadge").innerText = item.model;
       document.getElementById("precisionBadge").innerText = item.precision;
+      document.getElementById("questionBox").innerText = item.question;
       document.getElementById("answerBox").innerText = item.answer;
+      document.getElementById("goldBox").innerText = item.gold_answer === "NOT_FOUND" ? "⚠ Pertanyaan ini TIDAK ADA jawabannya di dokumen (unanswerable)" : item.gold_answer;
       document.getElementById("notesInput").value = item.notes || "";
 
       // Update active button state
@@ -301,12 +309,14 @@
     function exportCSV() {
       saveCurrent();
       const rater = document.getElementById("raterSelect").value;
-      const headers = ["qid", "model", "precision", "answer", "rating", "rater", "notes"];
+      const headers = ["qid", "model", "precision", "question", "answer", "gold_answer", "rating", "rater", "notes"];
       const rows = items.map(it => [
         it.qid,
         it.model,
         it.precision,
+        '"' + it.question.replace(/"/g, '""') + '"',
         '"' + it.answer.replace(/"/g, '""') + '"',
+        '"' + it.gold_answer.replace(/"/g, '""') + '"',
         it.rating !== "" ? it.rating : "",
         rater,
         '"' + (it.notes || "").replace(/"/g, '""') + '"'
