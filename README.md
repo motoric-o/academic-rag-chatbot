@@ -63,6 +63,15 @@ Copy `.env.example` to `.env` and fill in any keys required for your role. Never
 ### Member A — Local Models, Hardware, Compare & Telemetry
 - **Scope:** `src/regqa/models/local_hf.py`, `src/regqa/evaluation/efficiency.py`, `src/regqa/analysis/tokenizer_stats.py`, `src/regqa/analysis/scaling_fit.py`, `configs/models/local_*`, `frontend/src/features/compare/`, `frontend/src/features/telemetry/`
 - **Notes:** RTX 3070 (8 GB VRAM) is the reference machine for local latency/VRAM reporting. Verify CUDA + `bitsandbytes` in Week 1; Qwen3-0.6B 4-bit smoke test by end of Week 2.
+- **Commands:**
+  - CPU-safe unit tests: `uv run pytest tests/local/ -v`
+  - GPU environment check (Docker GPU worker): `docker compose --profile gpu exec gpu uv run python -m regqa.models.local_hf --check-env`
+  - Single-prompt smoke test (GPU worker): `docker compose --profile gpu exec gpu uv run python -m regqa.models.local_hf --config configs/models/local_qwen3_0.6b_4bit.yaml --smoke`
+  - 20-call smoke suite + efficiency summary (GPU worker): `docker compose --profile gpu exec gpu uv run python -m regqa.models.local_hf --config configs/models/local_qwen3_0.6b_4bit.yaml --smoke-suite --repeats 2`
+  - Efficiency summary CLI: `uv run python -m regqa.evaluation.efficiency <predictions.jsonl>`
+  - Experiment A1 tokenizer stats (CPU-only): `uv run python -m regqa.analysis.tokenizer_stats --id-corpus .tmp/corpus.id.json --tokenizers Qwen/Qwen3-0.6B`
+  - Scaling fit CLI (CPU-only): `uv run python -m regqa.analysis.scaling_fit --input <metrics.json> --metric strict_correctness`
+  - Frontend tests (Compare & Telemetry): `cd frontend && npm test`
 
 ### Member B — Corpus, Retrieval & Deterministic Metrics
 - **Scope:** `src/regqa/ingest/`, `src/regqa/translate/`, `src/regqa/retrieval/`, `configs/retrieval.yaml`, `data/`, deterministic evaluation modules, `scripts/make_tables.py`
