@@ -100,8 +100,33 @@ class ReplayService:
                 continue
 
     def get_section(self, section_id: str) -> dict[str, str] | None:
-        """Retrieve regulation section text."""
-        return CANNED_SECTIONS.get(section_id)
+        """Retrieve regulation section text by section_id (supports numbered IDs and legacy IDs)."""
+        if section_id in CANNED_SECTIONS:
+            return CANNED_SECTIONS[section_id]
+
+        # Check real or mini corpus JSON if available
+        corpus_paths = [
+            Path("data/source_en/corpus.json"),
+            Path("tests/fixtures/mini_corpus.json"),
+        ]
+        for cp in corpus_paths:
+            if cp.is_file():
+                try:
+                    with open(cp, "r", encoding="utf-8") as f:
+                        data = json.load(f)
+                    for sec in data.get("sections", []):
+                        if str(sec.get("section_id")) == str(section_id):
+                            return {
+                                "section_id": str(sec["section_id"]),
+                                "chapter": f"Section {sec.get('section_id')}",
+                                "article": sec.get("title", f"Section {sec.get('section_id')}"),
+                                "title": sec.get("title", ""),
+                                "text": sec.get("text", ""),
+                            }
+                except Exception:
+                    pass
+
+        return None
 
     def replay_query(
         self,

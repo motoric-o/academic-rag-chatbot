@@ -29,6 +29,16 @@ router = APIRouter(prefix="/api", tags=["Regulation QA"])
 replay_service = ReplayService()
 prompt_builder = PromptBuilder()
 
+
+def normalize_precision(precision: str) -> str:
+    """Normalize precision string representations defensively (spec §7.1 and handoff a_to_c)."""
+    p = precision.strip().lower()
+    if p in ("4bit", "4-bit"):
+        return "4-bit"
+    if p in ("8bit", "8-bit"):
+        return "8-bit"
+    return precision
+
 # Available models catalog (spec §7 & §12.1)
 SUPPORTED_MODELS: list[ModelInfo] = [
     ModelInfo(
@@ -131,6 +141,7 @@ def get_models() -> ModelsListResponse:
 def ask_question(request: AskRequest) -> AskResponse:
     """Query the regulation assistant with a question."""
     mode = os.getenv("REGQA_API_MODE", request.mode)
+    precision = normalize_precision(request.precision)
 
     if mode == "live-hosted":
         api_key = os.getenv("GROQ_API_KEY", "")
@@ -138,7 +149,7 @@ def ask_question(request: AskRequest) -> AskResponse:
             return AskResponse(
                 question=request.question,
                 model=request.model_id,
-                precision=request.precision,
+                precision=precision,
                 mode=mode,
                 answer_text="",
                 error={
@@ -151,7 +162,7 @@ def ask_question(request: AskRequest) -> AskResponse:
             adapter = HostedOpenAICompatAdapter(
                 model_id=request.model_id,
                 api_key=api_key,
-                precision=request.precision,
+                precision=precision,
             )
             # Fetch sample context for demo query
             canned_sec = replay_service.get_section("pasal_12")
@@ -163,7 +174,7 @@ def ask_question(request: AskRequest) -> AskResponse:
                 return AskResponse(
                     question=request.question,
                     model=request.model_id,
-                    precision=request.precision,
+                    precision=precision,
                     mode=mode,
                     answer_text="",
                     error={"code": "GENERATION_ERROR", "message": gen_res.error},
@@ -173,7 +184,7 @@ def ask_question(request: AskRequest) -> AskResponse:
             return AskResponse(
                 question=request.question,
                 model=request.model_id,
-                precision=request.precision,
+                precision=precision,
                 mode=mode,
                 answer_text=parsed.answer_text,
                 cited_sources=[],
@@ -208,11 +219,12 @@ def ask_question(request: AskRequest) -> AskResponse:
 def compare_models(request: CompareRequest) -> CompareResponse:
     """Compare answers from 2 to 3 models for the same question."""
     results: list[AskResponse] = []
+    precision = normalize_precision(request.precision)
     for model_id in request.model_ids:
         res = replay_service.replay_query(
             question=request.question,
             model_id=model_id,
-            precision=request.precision,
+            precision=precision,
         )
         results.append(res)
     return CompareResponse(question=request.question, results=results)
