@@ -1,0 +1,11 @@
+qid,model,precision,question,answer,gold_answer,rating,rater,notes
+fixture_01,mock-model,4-bit,"How long may academic leave last?","Up to three consecutive terms.","Up to three consecutive terms.",,,
+fixture_02,mock-model,4-bit,"How does a student request leave?","Use the student portal, then obtain an advisor's approval.","Use the student portal, then obtain an advisor's approval.",,,
+fixture_03,mock-model,4-bit,"What documents are needed for credit transfer?","The course outline and an official transcript.","The course outline and an official transcript.",,,
+fixture_04,mock-model,4-bit,"Is a course graded C eligible for credit transfer?","No. Courses must be graded B or higher.","No. Courses must be graded B or higher.",,,
+fixture_05,mock-model,4-bit,"How many credit units are needed for internship registration?","At least 84 credit units.","At least 84 credit units.",,,
+fixture_06,mock-model,4-bit,"Who signs the weekly internship log?","The workplace mentor.","The workplace mentor.",,,
+fixture_07,mock-model,4-bit,"What is the credit requirement and registration deadline for the internship?","At least 84 credit units. Registration closes on April 15.","At least 84 credit units. Registration closes on April 15.",,,
+fixture_08,mock-model,4-bit,"When is the final internship report due?","14 days after the placement ends.","14 days after the placement ends.",,,
+fixture_09,mock-model,4-bit,"What is the fee for applying for academic leave?","NOT_FOUND","NOT_FOUND",,,
+fixture_10,mock-model,4-bit,"Can the internship report be submitted late with a mentor's approval?","NOT_FOUND","NOT_FOUND",,,
