@@ -11,7 +11,7 @@ type RunMode = "replay" | "live-hosted" | "live-local";
 
 const SAMPLE_QUESTIONS = [
   "How long may academic leave last?",
-  "What is the fee for applying for academic leave?",
+  "What are the campus parking rules?",
   "Compare format compliance for academic leave rules",
 ];
 

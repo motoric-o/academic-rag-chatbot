@@ -45,7 +45,11 @@ export function buildFallbackCompareResponse(
 ): CompareResponse {
   const lowerQ = req.question.toLowerCase();
   const isUnanswerable =
-    lowerQ.includes("fee") || lowerQ.includes("not_found");
+    lowerQ.includes("parking") ||
+    lowerQ.includes("dormitory") ||
+    lowerQ.includes("unanswerable") ||
+    lowerQ.includes("fee") ||
+    lowerQ.includes("not_found");
   const isFormatDemo = lowerQ.includes("format");
   const isErrorDemo = lowerQ.includes("quota") || lowerQ.includes("error");
 
