@@ -1,0 +1,48 @@
+{
+  "notes": "SYNTHETIC_FIXTURE. Rules for the fictional Example Campus.",
+  "language": "en",
+  "sections": [
+    {
+      "section_id": "1",
+      "title": "Example Campus guide",
+      "text": "Example Campus provides the following student services.",
+      "page_start": 1,
+      "page_end": 1
+    },
+    {
+      "section_id": "1.1",
+      "title": "Academic leave",
+      "text": "Students may take up to three consecutive terms of academic leave. A request starts with the student portal, then needs an advisor's approval.",
+      "page_start": 1,
+      "page_end": 1
+    },
+    {
+      "section_id": "1.2",
+      "title": "Credit transfer",
+      "text": "A transfer request must include the course outline and an official transcript. Only courses graded B or higher are eligible.",
+      "page_start": 1,
+      "page_end": 1
+    },
+    {
+      "section_id": "1.3",
+      "title": "Internship",
+      "text": "Students need at least 84 credit units to register for an internship. A workplace mentor must sign the weekly log.",
+      "page_start": 1,
+      "page_end": 1
+    },
+    {
+      "section_id": "2",
+      "title": "Example Campus deadlines",
+      "text": "The following deadlines apply to internship administration.",
+      "page_start": 2,
+      "page_end": 2
+    },
+    {
+      "section_id": "2.1",
+      "title": "Registration and reporting",
+      "text": "Internship registration closes on April 15. The final report is due 14 days after the placement ends.",
+      "page_start": 2,
+      "page_end": 2
+    }
+  ]
+}

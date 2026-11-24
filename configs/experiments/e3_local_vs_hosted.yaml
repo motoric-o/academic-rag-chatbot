@@ -7,4 +7,6 @@ repeats: 3
 models:
   - "configs/models/local_qwen3_8b_8bit.yaml"
   - "configs/models/local_qwen3_8b_4bit.yaml"
-  - "configs/models/hosted_groq_template.yaml"
+  - "configs/models/hosted_groq_gpt_oss_20b.yaml"
+  - "configs/models/hosted_groq_gpt_oss_120b.yaml"
+  - "configs/models/hosted_groq_qwen_27b.yaml"

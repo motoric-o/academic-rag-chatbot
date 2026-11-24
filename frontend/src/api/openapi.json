@@ -1,0 +1,640 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Academic Regulation QA API",
+    "description": "Backend API for Grounded Academic Regulation QA across local and hosted models.",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/api/health": {
+      "get": {
+        "tags": [
+          "Regulation QA"
+        ],
+        "summary": "Get Health",
+        "description": "Return system status and current active mode.",
+        "operationId": "get_health_api_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/models": {
+      "get": {
+        "tags": [
+          "Regulation QA"
+        ],
+        "summary": "Get Models",
+        "description": "Return catalog of supported models, parameter scales, and hosting options.",
+        "operationId": "get_models_api_models_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModelsListResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/ask": {
+      "post": {
+        "tags": [
+          "Regulation QA"
+        ],
+        "summary": "Ask Question",
+        "description": "Query the regulation assistant with a question.",
+        "operationId": "ask_question_api_ask_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AskRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AskResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/compare": {
+      "post": {
+        "tags": [
+          "Regulation QA"
+        ],
+        "summary": "Compare Models",
+        "description": "Compare answers from 2 to 3 models for the same question.",
+        "operationId": "compare_models_api_compare_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompareRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompareResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/sections/{section_id}": {
+      "get": {
+        "tags": [
+          "Regulation QA"
+        ],
+        "summary": "Get Section",
+        "description": "Retrieve regulation section details for the Sources panel in frontend.",
+        "operationId": "get_section_api_sections__section_id__get",
+        "parameters": [
+          {
+            "name": "section_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Section Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SectionDetailResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ApiError": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code",
+            "description": "Error code: 'QUOTA_EXHAUSTED', 'MODEL_UNAVAILABLE', 'TIMEOUT', 'FORMAT_FAILURE', 'GENERAL_ERROR'"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "Human-readable error explanation"
+          },
+          "details": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Details",
+            "description": "Additional context or telemetry"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "title": "ApiError",
+        "description": "Structured error information for failures."
+      },
+      "AskRequest": {
+        "properties": {
+          "question": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Question",
+            "description": "Question text"
+          },
+          "model_id": {
+            "type": "string",
+            "title": "Model Id",
+            "description": "Model ID to query",
+            "default": "qwen3-0.6b"
+          },
+          "precision": {
+            "type": "string",
+            "title": "Precision",
+            "description": "Model precision (4-bit, 8-bit, fp16)",
+            "default": "4-bit"
+          },
+          "top_k": {
+            "type": "integer",
+            "maximum": 10.0,
+            "minimum": 1.0,
+            "title": "Top K",
+            "description": "Number of context passages to feed",
+            "default": 4
+          },
+          "mode": {
+            "type": "string",
+            "title": "Mode",
+            "description": "Execution mode: 'replay', 'live-hosted', 'live-local'",
+            "default": "replay"
+          }
+        },
+        "type": "object",
+        "required": [
+          "question"
+        ],
+        "title": "AskRequest",
+        "description": "Request payload for /api/ask."
+      },
+      "AskResponse": {
+        "properties": {
+          "question": {
+            "type": "string",
+            "title": "Question"
+          },
+          "model": {
+            "type": "string",
+            "title": "Model"
+          },
+          "precision": {
+            "type": "string",
+            "title": "Precision"
+          },
+          "mode": {
+            "type": "string",
+            "title": "Mode"
+          },
+          "answer_text": {
+            "type": "string",
+            "title": "Answer Text"
+          },
+          "cited_sources": {
+            "items": {
+              "$ref": "#/components/schemas/SourceCitation"
+            },
+            "type": "array",
+            "title": "Cited Sources"
+          },
+          "abstained": {
+            "type": "boolean",
+            "title": "Abstained",
+            "default": false
+          },
+          "format_ok": {
+            "type": "boolean",
+            "title": "Format Ok",
+            "default": true
+          },
+          "tokens_in": {
+            "type": "integer",
+            "title": "Tokens In",
+            "default": 0
+          },
+          "tokens_out": {
+            "type": "integer",
+            "title": "Tokens Out",
+            "default": 0
+          },
+          "latency_s": {
+            "type": "number",
+            "title": "Latency S",
+            "default": 0.0
+          },
+          "peak_vram_mb": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Peak Vram Mb"
+          },
+          "raw_output": {
+            "type": "string",
+            "title": "Raw Output",
+            "default": ""
+          },
+          "error": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ApiError"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "question",
+          "model",
+          "precision",
+          "mode",
+          "answer_text"
+        ],
+        "title": "AskResponse",
+        "description": "Response payload for /api/ask."
+      },
+      "CompareRequest": {
+        "properties": {
+          "question": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Question",
+            "description": "Question text submitted to all models"
+          },
+          "model_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 3,
+            "minItems": 2,
+            "title": "Model Ids",
+            "description": "2 or 3 model IDs to compare"
+          },
+          "precision": {
+            "type": "string",
+            "title": "Precision",
+            "description": "Default precision to use across models",
+            "default": "4-bit"
+          },
+          "mode": {
+            "type": "string",
+            "title": "Mode",
+            "description": "Execution mode",
+            "default": "replay"
+          }
+        },
+        "type": "object",
+        "required": [
+          "question",
+          "model_ids"
+        ],
+        "title": "CompareRequest",
+        "description": "Request payload for side-by-side comparison (/api/compare)."
+      },
+      "CompareResponse": {
+        "properties": {
+          "question": {
+            "type": "string",
+            "title": "Question"
+          },
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/AskResponse"
+            },
+            "type": "array",
+            "title": "Results"
+          }
+        },
+        "type": "object",
+        "required": [
+          "question",
+          "results"
+        ],
+        "title": "CompareResponse",
+        "description": "Response payload for side-by-side comparison (/api/compare)."
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "HealthResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "Status string",
+            "default": "ok"
+          },
+          "mode": {
+            "type": "string",
+            "title": "Mode",
+            "description": "Current operating mode (replay, live-hosted, live-local)",
+            "default": "replay"
+          }
+        },
+        "type": "object",
+        "title": "HealthResponse",
+        "description": "Health check response."
+      },
+      "ModelInfo": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id",
+            "description": "Unique model identifier, e.g. 'qwen3-0.6b'"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "description": "Human-readable display name"
+          },
+          "family": {
+            "type": "string",
+            "title": "Family",
+            "description": "Architecture family, e.g. 'qwen3', 'gpt-oss', 'mock'"
+          },
+          "params_total_b": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Params Total B",
+            "description": "Total parameters in billions"
+          },
+          "params_active_b": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Params Active B",
+            "description": "Active parameters per token in billions (for MoE)"
+          },
+          "precision": {
+            "type": "string",
+            "title": "Precision",
+            "description": "Quantization precision (4-bit, 8-bit, fp16, mock)",
+            "default": "4-bit"
+          },
+          "provider": {
+            "type": "string",
+            "title": "Provider",
+            "description": "Provider location ('local', 'groq', 'mock')",
+            "default": "local"
+          },
+          "available_modes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Available Modes",
+            "description": "Supported operational modes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "family"
+        ],
+        "title": "ModelInfo",
+        "description": "Metadata describing a supported model configuration."
+      },
+      "ModelsListResponse": {
+        "properties": {
+          "models": {
+            "items": {
+              "$ref": "#/components/schemas/ModelInfo"
+            },
+            "type": "array",
+            "title": "Models"
+          }
+        },
+        "type": "object",
+        "required": [
+          "models"
+        ],
+        "title": "ModelsListResponse",
+        "description": "List of available models."
+      },
+      "SectionDetailResponse": {
+        "properties": {
+          "section_id": {
+            "type": "string",
+            "title": "Section Id"
+          },
+          "chapter": {
+            "type": "string",
+            "title": "Chapter"
+          },
+          "article": {
+            "type": "string",
+            "title": "Article"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title",
+            "default": ""
+          },
+          "text": {
+            "type": "string",
+            "title": "Text"
+          }
+        },
+        "type": "object",
+        "required": [
+          "section_id",
+          "chapter",
+          "article",
+          "text"
+        ],
+        "title": "SectionDetailResponse",
+        "description": "Details of a specific regulation section for the Sources panel."
+      },
+      "SourceCitation": {
+        "properties": {
+          "passage_idx": {
+            "type": "integer",
+            "title": "Passage Idx",
+            "description": "1-indexed passage number in prompt context [n]"
+          },
+          "section_id": {
+            "type": "string",
+            "title": "Section Id",
+            "description": "Canonical section identifier, e.g. 'pasal_12'"
+          },
+          "chapter": {
+            "type": "string",
+            "title": "Chapter",
+            "description": "Chapter label, e.g. 'Chapter 3'"
+          },
+          "article": {
+            "type": "string",
+            "title": "Article",
+            "description": "Article label, e.g. 'Article 12'"
+          },
+          "text": {
+            "type": "string",
+            "title": "Text",
+            "description": "Passage or paragraph text"
+          }
+        },
+        "type": "object",
+        "required": [
+          "passage_idx",
+          "section_id",
+          "chapter",
+          "article",
+          "text"
+        ],
+        "title": "SourceCitation",
+        "description": "Citation details linked to a context passage and original regulation section."
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    }
+  }
+}
