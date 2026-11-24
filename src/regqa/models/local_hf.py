@@ -14,6 +14,7 @@ import logging
 import platform
 import time
 from dataclasses import dataclass
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -569,6 +570,135 @@ class LocalHFAdapter(ModelAdapter):
         )
 
 
+def run_smoke_suite(
+    config: LocalHFConfig,
+    *,
+    corpus_path: str | Path = "tests/fixtures/mini_corpus.json",
+    eval_path: str | Path = "tests/fixtures/mini_eval.jsonl",
+    repeats: int = 2,
+    max_questions: int | None = None,
+    output_dir: str | Path = "runs/local/smoke",
+    adapter: LocalHFAdapter | None = None,
+) -> dict[str, Any]:
+    """Run a multi-question local smoke suite and write predictions + efficiency summary."""
+    from regqa.evaluation.efficiency import (
+        compute_efficiency_summary,
+        format_efficiency_markdown,
+    )
+    from regqa.generation.parser import parse_output
+    from regqa.generation.prompt_builder import PromptBuilder
+
+    corpus_data = json.loads(Path(corpus_path).read_text(encoding="utf-8"))
+    sections_by_id = {
+        str(sec["section_id"]): sec for sec in corpus_data.get("sections", [])
+    }
+    eval_items: list[dict[str, Any]] = []
+    with Path(eval_path).open("r", encoding="utf-8") as handle:
+        for line in handle:
+            stripped = line.strip()
+            if stripped:
+                eval_items.append(json.loads(stripped))
+    if max_questions is not None:
+        eval_items = eval_items[:max_questions]
+
+    run_id = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
+    run_dir = Path(output_dir) / config.name / run_id
+    run_dir.mkdir(parents=True, exist_ok=True)
+    predictions_path = run_dir / "predictions.jsonl"
+    summary_path = run_dir / "efficiency_summary.json"
+
+    builder = PromptBuilder()
+    gen_config = config.default_generation_config()
+    owns_adapter = adapter is None
+    active_adapter = adapter if adapter is not None else LocalHFAdapter(config)
+    records: list[dict[str, Any]] = []
+
+    try:
+        if active_adapter._model is None or active_adapter._tokenizer is None:
+            active_adapter.load()
+        # Exclude 1 warm-up generation from timed benchmark metrics (§11.5).
+        active_adapter.warmup()
+
+        default_fallback_sec = next(iter(sections_by_id.values()), None)
+        with predictions_path.open("a", encoding="utf-8") as out_f:
+            for repeat_idx in range(1, repeats + 1):
+                for item in eval_items:
+                    spans = item.get("gold_spans") or []
+                    chunks: list[dict[str, Any]] = []
+                    for span in spans:
+                        sec = sections_by_id.get(str(span.get("section_id", "")))
+                        if sec is not None:
+                            sec_title = sec.get("title", "")
+                            chunks.append(
+                                {
+                                    "section_id": sec["section_id"],
+                                    "header": f"[{sec['section_id']}] {sec_title}".strip(),
+                                    "text": sec["text"],
+                                }
+                            )
+                    if not chunks and default_fallback_sec is not None:
+                        chunks.append(
+                            {
+                                "section_id": default_fallback_sec["section_id"],
+                                "header": f"[{default_fallback_sec['section_id']}]",
+                                "text": default_fallback_sec["text"],
+                            }
+                        )
+
+                    messages = builder.build_rag_messages(
+                        question=str(item["question"]),
+                        chunks=chunks,
+                    )
+                    prompt_hash = builder.compute_prompt_hash(messages)
+                    result = active_adapter.generate(messages, gen_config)
+                    parsed = parse_output(result.raw_output)
+
+                    record = {
+                        "qid": str(item["id"]),
+                        "model": result.model,
+                        "precision": result.precision,
+                        "run_id": f"{run_id}_r{repeat_idx}",
+                        "prompt_hash": prompt_hash,
+                        "raw_output": result.raw_output,
+                        "parsed": parsed.to_dict(),
+                        "tokens_in": result.tokens_in,
+                        "tokens_out": result.tokens_out,
+                        "latency_s": result.latency_s,
+                        "peak_vram_mb": result.peak_vram_mb,
+                        "hardware": result.hardware,
+                        "timestamp": datetime.now(UTC).isoformat(),
+                        "error": result.error,
+                    }
+                    out_f.write(json.dumps(record, ensure_ascii=False) + "\n")
+                    out_f.flush()
+                    records.append(record)
+    finally:
+        if owns_adapter:
+            active_adapter.unload()
+
+    summary = compute_efficiency_summary(
+        records,
+        model=config.name,
+        precision=config.precision,
+        load_time_s=active_adapter.load_time_s,
+        warmup_count=0,
+        enforce_reference_gpu_for_latency=True,
+    )
+    summary_dict = summary.to_dict()
+    summary_dict["warmup_excluded"] = 1
+    summary_dict["resolved_revision"] = active_adapter.resolved_revision
+    summary_dict["predictions_path"] = str(predictions_path)
+    summary_path.write_text(json.dumps(summary_dict, indent=2) + "\n", encoding="utf-8")
+
+    return {
+        "run_dir": str(run_dir),
+        "predictions_path": str(predictions_path),
+        "summary_path": str(summary_path),
+        "summary": summary_dict,
+        "markdown": format_efficiency_markdown([summary]),
+    }
+
+
 def _cli() -> None:
     parser = argparse.ArgumentParser(description="Member A local Hugging Face adapter utilities.")
     parser.add_argument(
@@ -586,10 +716,61 @@ def _cli() -> None:
         action="store_true",
         help="Load --config and run a single RAG-format smoke prompt.",
     )
+    parser.add_argument(
+        "--smoke-suite",
+        action="store_true",
+        help="Run a multi-question smoke suite and write predictions.jsonl + efficiency summary.",
+    )
+    parser.add_argument(
+        "--corpus",
+        type=Path,
+        default=Path("tests/fixtures/mini_corpus.json"),
+        help="Structured corpus JSON for --smoke-suite.",
+    )
+    parser.add_argument(
+        "--eval",
+        type=Path,
+        default=Path("tests/fixtures/mini_eval.jsonl"),
+        help="Evaluation JSONL for --smoke-suite.",
+    )
+    parser.add_argument(
+        "--repeats",
+        type=int,
+        default=2,
+        help="Repeats per question for --smoke-suite (default 2 -> 20 calls on mini_eval).",
+    )
+    parser.add_argument(
+        "--max-questions",
+        type=int,
+        default=None,
+        help="Optional cap on questions for --smoke-suite.",
+    )
+    parser.add_argument(
+        "--output-dir",
+        type=Path,
+        default=Path("runs/local/smoke"),
+        help="Output root directory for --smoke-suite.",
+    )
     args = parser.parse_args()
 
     if args.check_env:
         print(json.dumps(collect_local_hardware_info(), indent=2))
+        return
+
+    if args.smoke_suite:
+        if args.config is None:
+            parser.error("--smoke-suite requires --config <path/to/local_*.yaml>")
+        cfg = LocalHFConfig.from_yaml(args.config)
+        out = run_smoke_suite(
+            cfg,
+            corpus_path=args.corpus,
+            eval_path=args.eval,
+            repeats=args.repeats,
+            max_questions=args.max_questions,
+            output_dir=args.output_dir,
+        )
+        print(out["markdown"])
+        print(json.dumps(out["summary"], indent=2))
         return
 
     if args.smoke:
