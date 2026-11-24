@@ -1,0 +1,18 @@
+name: "hosted_groq_gpt_oss_20b"
+family: "gpt-oss"
+provider: "hosted_openai_compat"
+base_url: "https://api.groq.com/openai/v1"
+api_key_env: "GROQ_API_KEY"
+model_id: "openai/gpt-oss-20b"
+params_b: 20.91
+active_params_b: 3.61
+precision: "MXFP4"
+generation:
+  temperature: 0.0
+  max_new_tokens: 256
+  reasoning_effort: "low"
+rate_limits:
+  rpm: 30
+  rpd: 1000
+  tpm: 8000
+  tpd: 200000
