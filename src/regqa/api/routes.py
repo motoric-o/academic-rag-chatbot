@@ -20,8 +20,24 @@ from regqa.api.schemas import (
     SectionDetailResponse,
 )
 
+from regqa.generation.parser import parse_output
+from regqa.generation.prompt_builder import PromptBuilder
+from regqa.models.base import GenerationConfig
+from regqa.models.hosted_openai_compat import HostedOpenAICompatAdapter
+
 router = APIRouter(prefix="/api", tags=["Regulation QA"])
 replay_service = ReplayService()
+prompt_builder = PromptBuilder()
+
+
+def normalize_precision(precision: str) -> str:
+    """Normalize precision string representations defensively (spec §7.1 and handoff a_to_c)."""
+    p = precision.strip().lower()
+    if p in ("4bit", "4-bit"):
+        return "4-bit"
+    if p in ("8bit", "8-bit"):
+        return "8-bit"
+    return precision
 
 # Available models catalog (spec §7 & §12.1)
 SUPPORTED_MODELS: list[ModelInfo] = [
@@ -125,24 +141,90 @@ def get_models() -> ModelsListResponse:
 def ask_question(request: AskRequest) -> AskResponse:
     """Query the regulation assistant with a question."""
     mode = os.getenv("REGQA_API_MODE", request.mode)
-    if mode == "replay" or True:  # Default to replay in unblocked mock phase
-        return replay_service.replay_query(
-            question=request.question,
-            model_id=request.model_id,
-            precision=request.precision,
-            top_k=request.top_k,
-        )
+    precision = normalize_precision(request.precision)
+
+    if mode == "live-hosted":
+        api_key = os.getenv("GROQ_API_KEY", "")
+        if not api_key:
+            return AskResponse(
+                question=request.question,
+                model=request.model_id,
+                precision=precision,
+                mode=mode,
+                answer_text="",
+                error={
+                    "code": "API_KEY_MISSING",
+                    "message": "GROQ_API_KEY is not set in environment or .env file.",
+                    "details": {"mode": mode},
+                },
+            )
+        try:
+            adapter = HostedOpenAICompatAdapter(
+                model_id=request.model_id,
+                api_key=api_key,
+                precision=precision,
+            )
+            # Fetch sample context for demo query
+            canned_sec = replay_service.get_section("pasal_12")
+            chunks = [{"text": canned_sec["text"], "header": f"[{canned_sec['chapter']} > {canned_sec['article']}]"}] if canned_sec else []
+            messages = prompt_builder.build_rag_messages(request.question, chunks)
+            gen_res = adapter.generate(messages, GenerationConfig(temperature=0.0, max_new_tokens=256))
+
+            if gen_res.error:
+                return AskResponse(
+                    question=request.question,
+                    model=request.model_id,
+                    precision=precision,
+                    mode=mode,
+                    answer_text="",
+                    error={"code": "GENERATION_ERROR", "message": gen_res.error},
+                )
+
+            parsed = parse_output(gen_res.raw_output)
+            return AskResponse(
+                question=request.question,
+                model=request.model_id,
+                precision=precision,
+                mode=mode,
+                answer_text=parsed.answer_text,
+                cited_sources=[],
+                abstained=parsed.abstained,
+                format_ok=parsed.format_ok,
+                tokens_in=gen_res.tokens_in,
+                tokens_out=gen_res.tokens_out,
+                latency_s=gen_res.latency_s,
+                peak_vram_mb=gen_res.peak_vram_mb,
+                raw_output=gen_res.raw_output,
+            )
+        except Exception as e:
+            return AskResponse(
+                question=request.question,
+                model=request.model_id,
+                precision=request.precision,
+                mode=mode,
+                answer_text="",
+                error={"code": "HOSTED_ERROR", "message": str(e)},
+            )
+
+    # Default fallback: replay mode
+    return replay_service.replay_query(
+        question=request.question,
+        model_id=request.model_id,
+        precision=request.precision,
+        top_k=request.top_k,
+    )
 
 
 @router.post("/compare", response_model=CompareResponse)
 def compare_models(request: CompareRequest) -> CompareResponse:
     """Compare answers from 2 to 3 models for the same question."""
     results: list[AskResponse] = []
+    precision = normalize_precision(request.precision)
     for model_id in request.model_ids:
         res = replay_service.replay_query(
             question=request.question,
             model_id=model_id,
-            precision=request.precision,
+            precision=precision,
         )
         results.append(res)
     return CompareResponse(question=request.question, results=results)

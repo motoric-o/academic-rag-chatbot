@@ -1,1 +1,30 @@
-"""Deterministic seed utilities. Owner: Member C (spec §13)."""
+"""Deterministic seed utilities.
+
+Owner: Member C (Francisco Valentino; see docs/project_spec.md §13).
+"""
+
+from __future__ import annotations
+
+import os
+import random
+from typing import Any
+
+import numpy as np
+
+
+def seed_everything(seed: int = 42) -> None:
+    """Set seeds across Python standard library, NumPy, and PyTorch (if available)."""
+    random.seed(seed)
+    np.random.seed(seed)
+    os.environ["PYTHONHASHSEED"] = str(seed)
+
+    try:
+        import torch
+
+        torch.manual_seed(seed)
+        if torch.cuda.is_available():
+            torch.cuda.manual_seed_all(seed)
+            torch.backends.cudnn.deterministic = True
+            torch.backends.cudnn.benchmark = False
+    except ImportError:
+        pass
