@@ -20,6 +20,13 @@ Each inner list in `key_facts` contains interchangeable wordings of one required
 fact. For unanswerable rows use `NOT_FOUND`, an empty `key_facts` and empty
 `gold_spans`. Another member checks the double-annotated sample independently.
 
+### Source discrepancy in §9.4
+
+The PDF prints "Seminar Tugas Akhir (IN270)" in §9.4, item 1. Section 9.1
+identifies IN270 as Kerja Praktik and IN280 as Seminar Tugas Akhir. IN281 is
+Tugas Akhir. Preserve the printed code in the corpus and use §9.1 as evidence
+for questions about the canonical course codes.
+
 Validate the accumulated dev questions with the local corpus:
 
     uv run python -m regqa.evaluation.validate_eval data/eval/eval_set.jsonl --corpus data/source_en/corpus.json --expected-dev 40

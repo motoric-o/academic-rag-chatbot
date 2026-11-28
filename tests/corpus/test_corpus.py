@@ -104,3 +104,28 @@ def test_dates_percentages_and_numbers() -> None:
         "percentage value changed",
         "number count or value changed",
     }
+
+
+def test_glossary_prefers_full_phrases_and_still_checks_standalone_terms() -> None:
+    glossary = {
+        "Mata Kuliah": "course",
+        "wajib": "must",
+        "Mata Kuliah Wajib": "Required Courses",
+        "Tugas Akhir": "Undergraduate Thesis",
+        "Seminar Tugas Akhir": "Undergraduate Thesis Seminar",
+    }
+    limits = {"min_ratio": 0.6, "max_ratio": 1.8}
+    assert not translation_issues("Mata Kuliah Wajib", "Required Course", glossary, **limits)
+    assert not translation_issues("Mata Kuliah", "Courses", glossary, **limits)
+    assert translation_issues(
+        "Mata Kuliah Wajib. Mahasiswa wajib lulus.",
+        "Required Courses. Students should pass.",
+        glossary,
+        **limits,
+    ) == ["glossary term missing: wajib -> must"]
+    assert translation_issues(
+        "Seminar Tugas Akhir dan Tugas Akhir",
+        "Undergraduate Thesis Seminar and final project",
+        glossary,
+        **limits,
+    ) == ["glossary term missing: Tugas Akhir -> Undergraduate Thesis"]
