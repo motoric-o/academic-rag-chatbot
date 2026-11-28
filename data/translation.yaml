@@ -1,6 +1,6 @@
 # Member B section translation and validation parameters.
 temperature: 0.0
-timeout_ms: 90000
-max_input_chars: 6000
-min_length_ratio: 0.60
+timeout_ms: 180000
+max_input_chars: 4000
+min_length_ratio: 0.50
 max_length_ratio: 1.80

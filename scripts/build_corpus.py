@@ -1,8 +1,10 @@
 """Extract a PDF or build an English draft for bilingual review."""
 
 import argparse
+import hashlib
 import json
 import os
+import time
 from pathlib import Path
 
 import yaml
@@ -13,11 +15,16 @@ from regqa.ingest.parse_pdf import parse_pdf
 from regqa.ingest.structure import Corpus
 from regqa.translate.checks import load_glossary
 from regqa.translate.review_log import PRIORITY
-from regqa.translate.translate_sections import Translation, TranslationSettings, translate_sections
+from regqa.translate.translate_sections import TranslationSettings, translate_sections
 
 
 def build_english(
-    corpus: Corpus, model: str, config_path: Path, glossary_path: Path, prompt_log: Path
+    corpus: Corpus,
+    model: str,
+    config_path: Path,
+    glossary_path: Path,
+    prompt_log: Path,
+    checkpoint_path: Path | None = None,
 ) -> Corpus:
     from google import genai
     from google.genai import errors, types
@@ -31,12 +38,26 @@ def build_english(
     api_key = os.environ.get("GEMINI_API_KEY")
     if not api_key:
         raise ValueError("Set GEMINI_API_KEY in the environment or local .env before translation")
+    translation_schema = types.Schema(
+        type=types.Type.OBJECT,
+        properties={
+            "title": types.Schema(type=types.Type.STRING),
+            "text": types.Schema(type=types.Type.STRING),
+        },
+        required=["title", "text"],
+    )
     config = types.GenerateContentConfig(
         temperature=settings.temperature,
         response_mime_type="application/json",
-        response_schema=Translation,
+        response_schema=translation_schema,
     )
-    # ponytail: a run attempts each part once. Add a resume log if quotas block full runs.
+    cached_responses: dict[str, str] = {}
+    if checkpoint_path and checkpoint_path.is_file():
+        for line in checkpoint_path.read_text(encoding="utf-8").splitlines():
+            if line.strip():
+                entry = json.loads(line)
+                cached_responses[str(entry["prompt_hash"])] = str(entry["response"])
+
     with (
         prompt_log.open("x", encoding="utf-8") as log,
         genai.Client(
@@ -45,22 +66,52 @@ def build_english(
     ):
 
         def generate(prompt: str) -> str:
+            prompt_hash = hashlib.sha256(prompt.encode("utf-8")).hexdigest()
             log.write(json.dumps({"model": model, "prompt": prompt}, ensure_ascii=False) + "\n")
             log.flush()
-            try:
-                response = client.models.generate_content(
-                    model=model, contents=prompt, config=config
-                )
-            except errors.APIError as error:
-                raise RuntimeError(f"Gemini API returned HTTP {error.code}") from None
-            except Exception as error:
-                raise RuntimeError(f"Gemini request failed ({type(error).__name__})") from None
+            if prompt_hash in cached_responses:
+                return cached_responses[prompt_hash]
+            last_err: str | None = None
+            for attempt in range(1, 6):
+                try:
+                    response = client.models.generate_content(
+                        model=model, contents=prompt, config=config
+                    )
+                    break
+                except errors.APIError as error:
+                    detail = getattr(error, "message", "") or ""
+                    last_err = f"Gemini API returned HTTP {error.code}"
+                    if detail:
+                        last_err = f"{last_err}: {detail}"
+                    if error.code in {429, 500, 502, 503, 504} and attempt < 5:
+                        time.sleep(5 * (2 ** (attempt - 1)))
+                        continue
+                    raise RuntimeError(last_err) from None
+                except Exception as error:
+                    last_err = f"Gemini request failed ({type(error).__name__})"
+                    if attempt < 5:
+                        time.sleep(5 * (2 ** (attempt - 1)))
+                        continue
+                    raise RuntimeError(last_err) from None
+            else:
+                raise RuntimeError(last_err or "Gemini request failed after retries")
             if (
                 not response.candidates
                 or response.candidates[0].finish_reason != types.FinishReason.STOP
                 or not response.text
             ):
                 raise ValueError("Gemini did not return a complete translation")
+            if checkpoint_path is not None:
+                checkpoint_path.parent.mkdir(parents=True, exist_ok=True)
+                with checkpoint_path.open("a", encoding="utf-8") as ckpt:
+                    ckpt.write(
+                        json.dumps(
+                            {"prompt_hash": prompt_hash, "response": response.text},
+                            ensure_ascii=False,
+                        )
+                        + "\n"
+                    )
+                cached_responses[prompt_hash] = response.text
             return response.text
 
         return translate_sections(corpus, glossary, settings, generate)
@@ -75,6 +126,11 @@ def main() -> None:
     parser.add_argument("--prompt-log", type=Path, help="New JSONL file for verbatim prompts")
     parser.add_argument("--translation-config", type=Path, default=Path("data/translation.yaml"))
     parser.add_argument("--glossary", type=Path, default=Path("data/glossary.yaml"))
+    parser.add_argument(
+        "--checkpoint",
+        type=Path,
+        help="Optional JSONL checkpoint file to resume interrupted translation runs",
+    )
     args = parser.parse_args()
     if bool(args.model) != bool(args.prompt_log):
         parser.error("--model and --prompt-log are required together")
@@ -103,7 +159,12 @@ def main() -> None:
             corpus["sections"] = sections
         if args.model:
             corpus = build_english(
-                corpus, args.model, args.translation_config, args.glossary, args.prompt_log
+                corpus,
+                args.model,
+                args.translation_config,
+                args.glossary,
+                args.prompt_log,
+                checkpoint_path=args.checkpoint,
             )
         payload = (json.dumps(corpus, ensure_ascii=False, indent=2) + "\n").encode("utf-8")
         if default_output:
