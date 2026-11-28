@@ -62,7 +62,9 @@ def translate_sections(
         "Keep empty fields empty. Preserve numbers, percentages, dates, durations, "
         "conditions, list labels, and table rows. Preserve numeric date format and "
         "use English month names in spelled dates. Keep all digits as written. "
-        "Use these glossary equivalents whenever the source term appears:\n"
+        "Use these glossary equivalents whenever the source term appears. "
+        "Longer entries take precedence over words within them. "
+        "Use singular or plural noun forms as the sentence requires:\n"
         + json.dumps(glossary, ensure_ascii=False)
     )
     translated: list[Section] = []

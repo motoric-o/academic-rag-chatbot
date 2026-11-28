@@ -1,17 +1,18 @@
 """Extract a PDF or build an English draft for bilingual review."""
 
 import argparse
-import hashlib
 import json
 import os
 from pathlib import Path
-from tempfile import TemporaryDirectory
 
 import yaml
 from dotenv import load_dotenv
 
+from regqa.ingest.artifacts import publish, sha256
 from regqa.ingest.parse_pdf import parse_pdf
 from regqa.ingest.structure import Corpus
+from regqa.translate.checks import load_glossary
+from regqa.translate.review_log import PRIORITY
 from regqa.translate.translate_sections import Translation, TranslationSettings, translate_sections
 
 
@@ -24,20 +25,7 @@ def build_english(
     settings = TranslationSettings.model_validate(
         yaml.safe_load(config_path.read_text(encoding="utf-8"))
     )
-    glossary_data = yaml.safe_load(glossary_path.read_text(encoding="utf-8"))
-    glossary: dict[str, str] = {}
-    for group in ("terms", "modal_verbs"):
-        terms = glossary_data.get(group) if isinstance(glossary_data, dict) else None
-        if (
-            not isinstance(terms, dict)
-            or not terms
-            or not all(
-                isinstance(key, str) and key.strip() and isinstance(value, str) and value.strip()
-                for key, value in terms.items()
-            )
-        ):
-            raise ValueError(f"{glossary_path}: {group} must map terms to non-empty translations")
-        glossary.update(terms)
+    glossary = load_glossary(glossary_path)
 
     load_dotenv(".env")
     api_key = os.environ.get("GEMINI_API_KEY")
@@ -83,12 +71,15 @@ def main() -> None:
     parser.add_argument("pdf", type=Path, nargs="?")
     parser.add_argument("--output", type=Path)
     parser.add_argument("--model", help="Gemini model ID for an English draft")
+    parser.add_argument("--priority", action="store_true", help="Draft the 16 review sections")
     parser.add_argument("--prompt-log", type=Path, help="New JSONL file for verbatim prompts")
     parser.add_argument("--translation-config", type=Path, default=Path("data/translation.yaml"))
     parser.add_argument("--glossary", type=Path, default=Path("data/glossary.yaml"))
     args = parser.parse_args()
     if bool(args.model) != bool(args.prompt_log):
         parser.error("--model and --prompt-log are required together")
+    if args.priority and not args.model:
+        parser.error("--priority requires --model")
     if args.model and args.output is None:
         parser.error("--model requires an explicit draft --output path")
     if args.pdf is None:
@@ -105,6 +96,11 @@ def main() -> None:
         if args.output.exists():
             raise FileExistsError(f"Output already exists: {args.output}")
         corpus = parse_pdf(args.pdf)
+        if args.priority:
+            sections = [s for s in corpus["sections"] if s["section_id"] in PRIORITY]
+            if len(sections) != len(PRIORITY):
+                raise ValueError("PDF is missing one or more of the 16 priority sections")
+            corpus["sections"] = sections
         if args.model:
             corpus = build_english(
                 corpus, args.model, args.translation_config, args.glossary, args.prompt_log
@@ -112,13 +108,10 @@ def main() -> None:
         payload = (json.dumps(corpus, ensure_ascii=False, indent=2) + "\n").encode("utf-8")
         if default_output:
             args.output.parent.mkdir(exist_ok=True)
-        with TemporaryDirectory(dir=args.output.parent) as directory:
-            staged = Path(directory) / args.output.name
-            staged.write_bytes(payload)
-            os.link(staged, args.output)
+        publish(args.output.parent, {args.output.name: payload})
     except (OSError, ValueError, ImportError, RuntimeError, yaml.YAMLError) as error:
         parser.exit(1, f"{error}\n")
-    digest = hashlib.sha256(payload).hexdigest()
+    digest = sha256(payload)
     print(f"{len(corpus['sections'])} sections ({corpus['language']}) -> {args.output}")
     print(f"SHA-256 {digest}")
 

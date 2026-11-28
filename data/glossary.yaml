@@ -1,7 +1,7 @@
 # Fixed Indonesian -> English regulation glossary (Member B owns; Member A reviews)
 # See docs/project_spec.md §5. Freeze before running translation.
 
-version: "0.1.0"
+version: "0.2.0"
 status: "draft"
 terms:
   BAB: "Chapter"
@@ -14,7 +14,26 @@ terms:
   skripsi: "undergraduate thesis"
   dosen pembimbing: "supervisor"
   sanksi: "sanction"
+  Kerja Praktik: "Practical Work"
+  Tugas Akhir: "Undergraduate Thesis"
+  Seminar Tugas Akhir: "Undergraduate Thesis Seminar"
+  Mata Kuliah Wajib: "Required Courses"
+  Mata Kuliah Pilihan: "Elective Courses"
+  Ujian Sidang Kerja Praktik: "Practical Work Defense Exam"
+  Mata Kuliah: "course"
+  Program Studi: "study program"
+  Prasyarat: "prerequisite"
+  Konversi Nilai: "grade conversion"
+  Program Pengayaan: "enrichment program"
+  Topik Lanjut: "advanced topics"
+  magang: "internship"
+  bimbingan: "supervision"
+  koordinator: "coordinator"
+  semester reguler: "regular semester"
+  semester antara: "intersession semester"
 modal_verbs:
   wajib: "must"
+  harus: "must"
   dapat: "may"
   dilarang: "prohibited"
+  diizinkan: "permitted"
