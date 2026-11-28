@@ -3,11 +3,10 @@
 Uses placeholder mode (no NLI model loaded) to keep tests fast and CPU-only.
 """
 
-import pytest
 from regqa.evaluation.faithfulness import (
-    split_into_claims,
     check_faithfulness,
     evaluate_faithfulness_batch,
+    split_into_claims,
 )
 
 

@@ -6,6 +6,7 @@ Owner: Member C (Francisco Valentino; see docs/project_spec.md §12.1).
 from __future__ import annotations
 
 import os
+
 from fastapi import APIRouter, HTTPException, status
 
 from regqa.api.replay import ReplayService
@@ -19,7 +20,6 @@ from regqa.api.schemas import (
     ModelsListResponse,
     SectionDetailResponse,
 )
-
 from regqa.generation.parser import parse_output
 from regqa.generation.prompt_builder import PromptBuilder
 from regqa.models.base import GenerationConfig
@@ -38,6 +38,7 @@ def normalize_precision(precision: str) -> str:
     if p in ("8bit", "8-bit"):
         return "8-bit"
     return precision
+
 
 # Available models catalog (spec §7 & §12.1)
 SUPPORTED_MODELS: list[ModelInfo] = [
@@ -166,9 +167,20 @@ def ask_question(request: AskRequest) -> AskResponse:
             )
             # Fetch sample context for demo query
             canned_sec = replay_service.get_section("pasal_12")
-            chunks = [{"text": canned_sec["text"], "header": f"[{canned_sec['chapter']} > {canned_sec['article']}]"}] if canned_sec else []
+            chunks = (
+                [
+                    {
+                        "text": canned_sec["text"],
+                        "header": f"[{canned_sec['chapter']} > {canned_sec['article']}]",
+                    }
+                ]
+                if canned_sec
+                else []
+            )
             messages = prompt_builder.build_rag_messages(request.question, chunks)
-            gen_res = adapter.generate(messages, GenerationConfig(temperature=0.0, max_new_tokens=256))
+            gen_res = adapter.generate(
+                messages, GenerationConfig(temperature=0.0, max_new_tokens=256)
+            )
 
             if gen_res.error:
                 return AskResponse(

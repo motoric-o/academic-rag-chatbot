@@ -10,7 +10,7 @@ import time
 from typing import Any
 
 from regqa.models.base import GenerationConfig, GenerationResult, ModelAdapter
-from regqa.models.rate_limiter import PersistentRateLimiter
+from regqa.models.rate_limiter import PersistentRateLimiter, RateLimitExceededError
 from regqa.utils.hardware_info import collect_hardware_info
 from regqa.utils.logging import get_logger
 
@@ -121,15 +121,31 @@ class HostedOpenAICompatAdapter(ModelAdapter):
                     error=None,
                 )
 
+            except RateLimitExceededError:
+                raise
             except Exception as e:
                 err_str = str(e)
                 last_error = err_str
-                # Check for rate limit 429
+                # Check for rate limit 429 and honor Retry-After header if present
                 if "429" in err_str or "rate_limit" in err_str.lower():
-                    logger.warning(f"Groq 429 rate limit hit for {self.model_id}. Backing off... (attempt {attempt+1})")
-                    self.rate_limiter.handle_429(retry_after_s=5.0 * (attempt + 1))
+                    retry_after: float | None = None
+                    headers = getattr(getattr(e, "response", None), "headers", None)
+                    if headers and "retry-after" in {k.lower(): v for k, v in headers.items()}:
+                        raw_ra = {k.lower(): v for k, v in headers.items()}["retry-after"]
+                        try:
+                            retry_after = float(raw_ra)
+                        except (ValueError, TypeError):
+                            retry_after = None
+                    wait_s = retry_after if retry_after is not None else 5.0 * (attempt + 1)
+                    logger.warning(
+                        f"Groq 429 rate limit hit for {self.model_id}. "
+                        f"Backing off {wait_s:.1f}s... (attempt {attempt + 1})"
+                    )
+                    self.rate_limiter.handle_429(retry_after_s=wait_s)
                 else:
-                    logger.warning(f"Error calling {self.model_id}: {err_str} (attempt {attempt+1})")
+                    logger.warning(
+                        f"Error calling {self.model_id}: {err_str} (attempt {attempt + 1})"
+                    )
                     time.sleep(2.0 * (attempt + 1))
 
         # If all retries failed

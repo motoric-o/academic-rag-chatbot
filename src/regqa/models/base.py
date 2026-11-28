@@ -71,7 +71,10 @@ class MockAdapter(ModelAdapter):
         gen_config: GenerationConfig,
     ) -> GenerationResult:
         prompt_tokens = sum(len(m.get("content", "").split()) for m in messages)
-        user_msg = next((m.get("content", "") for m in reversed(messages) if m.get("role") == "user"), "")
+        user_msg = next(
+            (m.get("content", "") for m in reversed(messages) if m.get("role") == "user"),
+            "",
+        )
         
         output = self.canned_response
         for q, resp in self.responses_by_question.items():

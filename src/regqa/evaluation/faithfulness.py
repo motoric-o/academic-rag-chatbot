@@ -37,11 +37,11 @@ def _get_nli_pipeline():
                 model="cross-encoder/nli-deberta-v3-base",
                 device=-1,  # CPU
             )
-        except ImportError:
+        except ImportError as exc:
             raise RuntimeError(
                 "transformers is required for the NLI faithfulness checker. "
                 "Install with: pip install transformers torch"
-            )
+            ) from exc
     return _nli_pipeline
 
 

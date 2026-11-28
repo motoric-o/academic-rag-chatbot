@@ -13,9 +13,9 @@ inter-rater agreement computation.
 
 from __future__ import annotations
 
-import json
 import csv
-from dataclasses import dataclass, field
+import json
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
@@ -113,7 +113,7 @@ def parse_judge_response(raw: str) -> dict[str, Any]:
     try:
         data = json.loads(raw)
     except json.JSONDecodeError as e:
-        raise ValueError(f"Judge response is not valid JSON: {e}\nRaw: {raw}")
+        raise ValueError(f"Judge response is not valid JSON: {e}\nRaw: {raw}") from e
 
     rating = data.get("rating")
     if rating not in (0, 1, 2):
@@ -165,7 +165,7 @@ def cohens_kappa(ratings_a: list[int], ratings_b: list[int]) -> float:
     for cat_a in categories:
         for cat_b in categories:
             matrix[(cat_a, cat_b)] = 0
-    for a, b in zip(ratings_a, ratings_b):
+    for a, b in zip(ratings_a, ratings_b, strict=True):
         matrix[(a, b)] += 1
 
     # Observed agreement
@@ -237,7 +237,7 @@ def load_human_ratings(csv_path: str | Path) -> list[HumanRating]:
     Returns only rows where rating is non-empty.
     """
     ratings: list[HumanRating] = []
-    with open(csv_path, "r", encoding="utf-8") as f:
+    with open(csv_path, encoding="utf-8") as f:
         reader = csv.DictReader(f)
         for row in reader:
             rating_str = row.get("rating", "").strip()
@@ -284,7 +284,7 @@ def compute_agreement(
     list_a = [ratings_a[k] for k in overlap_keys]
     list_b = [ratings_b[k] for k in overlap_keys]
 
-    exact_match = sum(1 for a, b in zip(list_a, list_b) if a == b)
+    exact_match = sum(1 for a, b in zip(list_a, list_b, strict=True) if a == b)
 
     return {
         "kappa": cohens_kappa(list_a, list_b),

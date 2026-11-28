@@ -94,7 +94,6 @@ def parse_output(raw_output: str | None) -> ParsedOutput:
             error_reason="Missing 'Sources: [n]' citation line",
         )
 
-    citation_block = match.group(0)
     answer_text = text[: match.start()].strip()
     digits = [int(d) for d in _DIGIT_EXTRACTOR.findall(match.group(1))]
 

@@ -25,7 +25,7 @@ if str(PROJECT_ROOT) not in sys.path:
 def load_jsonl(path: str | Path) -> list[dict]:
     """Load a JSONL file into a list of dicts."""
     items = []
-    with open(path, "r", encoding="utf-8") as f:
+    with open(path, encoding="utf-8") as f:
         for line in f:
             line = line.strip()
             if line:
@@ -43,17 +43,42 @@ def load_eval_set(path: str | Path | None = None) -> dict[str, dict]:
 
 def cmd_evaluate(args: argparse.Namespace) -> None:
     """Run evaluation metrics on predictions."""
-    from regqa.evaluation.faithfulness import evaluate_faithfulness_batch
     from regqa.analysis.error_taxonomy import (
         classify_errors,
         compute_error_taxonomy,
     )
+    from regqa.evaluation.abstention import evaluate_abstention_batch
+    from regqa.evaluation.citation import evaluate_citation_batch
+    from regqa.evaluation.faithfulness import evaluate_faithfulness_batch
+    from regqa.evaluation.keyfact import evaluate_keyfact_batch
 
     predictions = load_jsonl(args.predictions)
     print(f"Loaded {len(predictions)} predictions from {args.predictions}")
 
     # Load eval set for key-fact and error analysis
     eval_set = load_eval_set(args.eval_set)
+
+    # --- Deterministic metrics (keyfact, abstention, optional citation) ---
+    kf = evaluate_keyfact_batch(predictions, eval_set)
+    print("\n=== Key-Fact Correctness ===")
+    print(f"  Strict correctness:  {kf['strict_correctness']:.1%} (n={kf['n_evaluated']})")
+    print(f"  Soft key-fact rec:   {kf['soft_keyfact_recall']:.1%}")
+    print(f"  Format valid rate:   {kf['format_ok_rate']:.1%}")
+
+    contexts_by_qid = None
+    if args.contexts and Path(args.contexts).is_file():
+        contexts_by_qid = {str(r["qid"]): r for r in load_jsonl(args.contexts)}
+        cit = evaluate_citation_batch(predictions, eval_set, contexts_by_qid)
+        print("\n=== Citation Quality ===")
+        print(f"  Citation precision:  {cit['citation_precision']}")
+        print(f"  Citation recall:     {cit['citation_recall']}")
+        print(f"  Invalid cit. rate:   {cit['invalid_citation_rate']:.1%}")
+
+    abst = evaluate_abstention_batch(predictions, eval_set, contexts_by_qid)
+    print("\n=== Abstention ===")
+    print(f"  Abstention recall:   {abst.recall}")
+    print(f"  False-answer rate:   {abst.false_answer_rate}")
+    print(f"  Over-abstention:     {abst.over_abstention_rate}")
 
     # --- Error taxonomy ---
     annotations = []
@@ -102,8 +127,8 @@ def cmd_create_rating_sheet(args: argparse.Namespace) -> None:
 
     path = create_rating_sheet_template(output, predictions)
     print(f"Created rating sheet template: {path}")
-    print(f"  Columns: qid, model, precision, answer, rating, rater, notes")
-    print(f"  Fill in 'rating' (0/1/2), 'rater' (your initial), and optional 'notes'.")
+    print("  Columns: qid, model, precision, answer, rating, rater, notes")
+    print("  Fill in 'rating' (0/1/2), 'rater' (your initial), and optional 'notes'.")
 
 
 def cmd_agreement(args: argparse.Namespace) -> None:
@@ -130,6 +155,9 @@ def main() -> None:
     )
     p_eval.add_argument(
         "--eval-set", default=None, help="Path to eval_set.jsonl (default: data/eval/)"
+    )
+    p_eval.add_argument(
+        "--contexts", default=None, help="Optional retrieval cache contexts.jsonl path"
     )
     p_eval.add_argument(
         "--faithfulness",

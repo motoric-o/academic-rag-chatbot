@@ -6,8 +6,8 @@ Owner: Member C (Francisco Valentino; see docs/project_spec.md §12.1 & §12.3).
 from __future__ import annotations
 
 import json
-from pathlib import Path
 import sys
+from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 

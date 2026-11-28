@@ -15,7 +15,7 @@ import yaml
 
 def read_json(path: str | Path) -> Any:
     """Read and parse a JSON file."""
-    with open(path, "r", encoding="utf-8") as f:
+    with open(path, encoding="utf-8") as f:
         return json.load(f)
 
 
@@ -33,7 +33,7 @@ def read_jsonl(path: str | Path) -> list[dict[str, Any]]:
     p = Path(path)
     if not p.is_file():
         return records
-    with open(p, "r", encoding="utf-8") as f:
+    with open(p, encoding="utf-8") as f:
         for line in f:
             line = line.strip()
             if line:
@@ -60,7 +60,7 @@ def write_jsonl(path: str | Path, records: list[dict[str, Any]]) -> None:
 
 def read_yaml(path: str | Path) -> dict[str, Any]:
     """Read and parse a YAML file."""
-    with open(path, "r", encoding="utf-8") as f:
+    with open(path, encoding="utf-8") as f:
         return yaml.safe_load(f) or {}
 
 

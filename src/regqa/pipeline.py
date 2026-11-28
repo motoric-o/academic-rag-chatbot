@@ -5,8 +5,8 @@ Owner: Member C (Francisco Valentino; see docs/project_spec.md §0.2, §0.3 & §
 
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass
-from datetime import datetime, timezone
+from dataclasses import dataclass
+from datetime import UTC, datetime
 from typing import Any
 
 from regqa.generation.parser import ParsedOutput, parse_output
@@ -77,7 +77,7 @@ class RAGPipeline:
         else:
             parsed = parse_output(gen_result.raw_output)
 
-        now_str = datetime.now(timezone.utc).isoformat()
+        now_str = datetime.now(UTC).isoformat()
         return PipelineOutput(
             question=question,
             prompt_hash=prompt_hash,

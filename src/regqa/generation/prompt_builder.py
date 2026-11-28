@@ -36,12 +36,13 @@ class PromptBuilder:
                     "You are a strict academic regulation assistant.\n"
                     "1. Answer only using the numbered context passages below.\n"
                     "2. Be concise and state the exact rule, number, duration, or condition.\n"
-                    "3. End your answer with `Sources: [n], [m]` listing only the passage numbers you used.\n"
+                    "3. End your answer with `Sources: [n], [m]` listing only the "
+                    "passage numbers you used.\n"
                     "4. If the context does not contain the answer, reply exactly: `NOT_FOUND`"
                 )
                 self.user_template = "Context passages:\n{context}\n\nQuestion: {question}"
             else:
-                with open(path, "r", encoding="utf-8") as f:
+                with open(path, encoding="utf-8") as f:
                     data = yaml.safe_load(f)
                 self.version = data.get("version", "unknown")
                 self.system_prompt = data["system_prompt"].strip()

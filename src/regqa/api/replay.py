@@ -11,7 +11,6 @@ from typing import Any
 
 from regqa.api.schemas import AskResponse, SourceCitation
 
-
 # Sample canned mock data to ensure the frontend works out-of-the-box before experiments run
 CANNED_SECTIONS: dict[str, dict[str, str]] = {
     "pasal_12": {
@@ -32,7 +31,8 @@ CANNED_SECTIONS: dict[str, dict[str, str]] = {
         "title": "Study Load and Evaluation (Beban Studi)",
         "text": (
             "1. The standard study load for an undergraduate degree program is 144 credit units.\n"
-            "2. Students with a cumulative GPA of at least 3.00 may take up to 24 credit units in the following semester."
+            "2. Students with a cumulative GPA of at least 3.00 may take up to 24 credit units "
+            "in the following semester."
         ),
     },
 }
@@ -40,7 +40,10 @@ CANNED_SECTIONS: dict[str, dict[str, str]] = {
 CANNED_REPLAY_RESPONSES: list[dict[str, Any]] = [
     {
         "keywords": ["leave", "cuti", "semester"],
-        "answer_text": "Students may take academic leave for a maximum duration of two consecutive semesters, provided they have completed at least two semesters.",
+        "answer_text": (
+            "Students may take academic leave for a maximum duration of two consecutive "
+            "semesters, provided they have completed at least two semesters."
+        ),
         "cited_ids": [1],
         "abstained": False,
         "format_ok": True,
@@ -50,7 +53,10 @@ CANNED_REPLAY_RESPONSES: list[dict[str, Any]] = [
                 "section_id": "pasal_12",
                 "chapter": "Chapter 3",
                 "article": "Article 12",
-                "text": "Academic leave is granted for a maximum duration of two consecutive semesters.",
+                "text": (
+                    "Academic leave is granted for a maximum duration of "
+                    "two consecutive semesters."
+                ),
             }
         ],
         "tokens_in": 312,
@@ -88,7 +94,7 @@ class ReplayService:
 
         for path in self.runs_dir.rglob("predictions.jsonl"):
             try:
-                with open(path, "r", encoding="utf-8") as f:
+                with open(path, encoding="utf-8") as f:
                     for line in f:
                         line = line.strip()
                         if not line:
@@ -112,7 +118,7 @@ class ReplayService:
         for cp in corpus_paths:
             if cp.is_file():
                 try:
-                    with open(cp, "r", encoding="utf-8") as f:
+                    with open(cp, encoding="utf-8") as f:
                         data = json.load(f)
                     for sec in data.get("sections", []):
                         if str(sec.get("section_id")) == str(section_id):

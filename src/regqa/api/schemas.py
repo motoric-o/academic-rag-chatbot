@@ -7,6 +7,7 @@ Consumers: Member D (Frontend API types via openapi.json), Member A (Compare UI)
 from __future__ import annotations
 
 from typing import Any
+
 from pydantic import BaseModel, Field
 
 
@@ -14,7 +15,9 @@ class HealthResponse(BaseModel):
     """Health check response."""
 
     status: str = Field("ok", description="Status string")
-    mode: str = Field("replay", description="Current operating mode (replay, live-hosted, live-local)")
+    mode: str = Field(
+        "replay", description="Current operating mode (replay, live-hosted, live-local)"
+    )
 
 
 class ModelInfo(BaseModel):
@@ -24,7 +27,9 @@ class ModelInfo(BaseModel):
     name: str = Field(..., description="Human-readable display name")
     family: str = Field(..., description="Architecture family, e.g. 'qwen3', 'gpt-oss', 'mock'")
     params_total_b: float | None = Field(None, description="Total parameters in billions")
-    params_active_b: float | None = Field(None, description="Active parameters per token in billions (for MoE)")
+    params_active_b: float | None = Field(
+        None, description="Active parameters per token in billions (for MoE)"
+    )
     precision: str = Field("4-bit", description="Quantization precision (4-bit, 8-bit, fp16, mock)")
     provider: str = Field("local", description="Provider location ('local', 'groq', 'mock')")
     available_modes: list[str] = Field(
@@ -52,9 +57,17 @@ class SourceCitation(BaseModel):
 class ApiError(BaseModel):
     """Structured error information for failures."""
 
-    code: str = Field(..., description="Error code: 'QUOTA_EXHAUSTED', 'MODEL_UNAVAILABLE', 'TIMEOUT', 'FORMAT_FAILURE', 'GENERAL_ERROR'")
+    code: str = Field(
+        ...,
+        description=(
+            "Error code: 'QUOTA_EXHAUSTED', 'MODEL_UNAVAILABLE', "
+            "'TIMEOUT', 'FORMAT_FAILURE', 'GENERAL_ERROR'"
+        ),
+    )
     message: str = Field(..., description="Human-readable error explanation")
-    details: dict[str, Any] = Field(default_factory=dict, description="Additional context or telemetry")
+    details: dict[str, Any] = Field(
+        default_factory=dict, description="Additional context or telemetry"
+    )
 
 
 class AskRequest(BaseModel):
@@ -90,7 +103,9 @@ class CompareRequest(BaseModel):
     """Request payload for side-by-side comparison (/api/compare)."""
 
     question: str = Field(..., min_length=1, description="Question text submitted to all models")
-    model_ids: list[str] = Field(..., min_length=2, max_length=3, description="2 or 3 model IDs to compare")
+    model_ids: list[str] = Field(
+        ..., min_length=2, max_length=3, description="2 or 3 model IDs to compare"
+    )
     precision: str = Field("4-bit", description="Default precision to use across models")
     mode: str = Field("replay", description="Execution mode")
 

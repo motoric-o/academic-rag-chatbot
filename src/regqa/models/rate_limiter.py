@@ -7,9 +7,10 @@ from __future__ import annotations
 
 import json
 import time
-from datetime import datetime, timezone
+from collections.abc import Callable
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 
 class RateLimitExceededError(Exception):
@@ -54,12 +55,12 @@ class PersistentRateLimiter:
         self._load_state()
 
     def _get_today_str(self) -> str:
-        return datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        return datetime.now(UTC).strftime("%Y-%m-%d")
 
     def _load_state(self) -> None:
         if self.state_path.is_file():
             try:
-                with open(self.state_path, "r", encoding="utf-8") as f:
+                with open(self.state_path, encoding="utf-8") as f:
                     data = json.load(f)
                 if data.get("date") == self.current_date:
                     self.daily_requests_used = data.get("daily_requests_used", 0)
@@ -98,7 +99,9 @@ class PersistentRateLimiter:
         self.last_leak_time = now
 
         self.req_tokens = min(self.req_capacity, self.req_tokens + elapsed * self.req_fill_rate)
-        self.token_tokens = min(self.token_capacity, self.token_tokens + elapsed * self.token_fill_rate)
+        self.token_tokens = min(
+            self.token_capacity, self.token_tokens + elapsed * self.token_fill_rate
+        )
 
     def acquire(self, estimated_tokens: int = 2500) -> None:
         """Wait until sufficient capacity exists under RPM, TPM, RPD, and TPD."""

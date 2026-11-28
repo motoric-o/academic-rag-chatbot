@@ -5,18 +5,18 @@ and rating sheet I/O — all without an actual LLM call.
 """
 
 import csv
-import json
 import tempfile
 from pathlib import Path
 
 import pytest
+
 from regqa.evaluation.judge import (
     build_judge_prompt,
-    parse_judge_response,
     cohens_kappa,
+    compute_agreement,
     create_rating_sheet_template,
     load_human_ratings,
-    compute_agreement,
+    parse_judge_response,
 )
 
 
@@ -104,7 +104,7 @@ class TestRatingSheetIO:
 
             # Verify file exists and has correct structure
             assert path.exists()
-            with open(path, "r", encoding="utf-8") as f:
+            with open(path, encoding="utf-8") as f:
                 reader = csv.DictReader(f)
                 rows = list(reader)
             assert len(rows) == 2
@@ -117,17 +117,32 @@ class TestRatingSheetIO:
             path = Path(tmpdir) / "filled.csv"
             with open(path, "w", newline="", encoding="utf-8") as f:
                 writer = csv.DictWriter(
-                    f, fieldnames=["qid", "model", "precision", "answer", "rating", "rater", "notes"]
+                    f,
+                    fieldnames=["qid", "model", "precision", "answer", "rating", "rater", "notes"],
                 )
                 writer.writeheader()
-                writer.writerow({
-                    "qid": "q1", "model": "m1", "precision": "4-bit",
-                    "answer": "A", "rating": "2", "rater": "D", "notes": "",
-                })
-                writer.writerow({
-                    "qid": "q2", "model": "m1", "precision": "4-bit",
-                    "answer": "B", "rating": "", "rater": "", "notes": "",
-                })
+                writer.writerow(
+                    {
+                        "qid": "q1",
+                        "model": "m1",
+                        "precision": "4-bit",
+                        "answer": "A",
+                        "rating": "2",
+                        "rater": "D",
+                        "notes": "",
+                    }
+                )
+                writer.writerow(
+                    {
+                        "qid": "q2",
+                        "model": "m1",
+                        "precision": "4-bit",
+                        "answer": "B",
+                        "rating": "",
+                        "rater": "",
+                        "notes": "",
+                    }
+                )
 
             ratings = load_human_ratings(path)
             assert len(ratings) == 1  # only q1 has a rating
@@ -142,18 +157,64 @@ class TestComputeAgreement:
             # Rater A
             path_a = Path(tmpdir) / "rater_a.csv"
             with open(path_a, "w", newline="", encoding="utf-8") as f:
-                w = csv.DictWriter(f, fieldnames=["qid", "model", "precision", "answer", "rating", "rater", "notes"])
+                w = csv.DictWriter(
+                    f,
+                    fieldnames=["qid", "model", "precision", "answer", "rating", "rater", "notes"],
+                )
                 w.writeheader()
-                w.writerow({"qid": "q1", "model": "m1", "precision": "4-bit", "answer": "A", "rating": "2", "rater": "A", "notes": ""})
-                w.writerow({"qid": "q2", "model": "m1", "precision": "4-bit", "answer": "B", "rating": "1", "rater": "A", "notes": ""})
+                w.writerow(
+                    {
+                        "qid": "q1",
+                        "model": "m1",
+                        "precision": "4-bit",
+                        "answer": "A",
+                        "rating": "2",
+                        "rater": "A",
+                        "notes": "",
+                    }
+                )
+                w.writerow(
+                    {
+                        "qid": "q2",
+                        "model": "m1",
+                        "precision": "4-bit",
+                        "answer": "B",
+                        "rating": "1",
+                        "rater": "A",
+                        "notes": "",
+                    }
+                )
 
             # Rater B
             path_b = Path(tmpdir) / "rater_b.csv"
             with open(path_b, "w", newline="", encoding="utf-8") as f:
-                w = csv.DictWriter(f, fieldnames=["qid", "model", "precision", "answer", "rating", "rater", "notes"])
+                w = csv.DictWriter(
+                    f,
+                    fieldnames=["qid", "model", "precision", "answer", "rating", "rater", "notes"],
+                )
                 w.writeheader()
-                w.writerow({"qid": "q1", "model": "m1", "precision": "4-bit", "answer": "A", "rating": "2", "rater": "B", "notes": ""})
-                w.writerow({"qid": "q2", "model": "m1", "precision": "4-bit", "answer": "B", "rating": "1", "rater": "B", "notes": ""})
+                w.writerow(
+                    {
+                        "qid": "q1",
+                        "model": "m1",
+                        "precision": "4-bit",
+                        "answer": "A",
+                        "rating": "2",
+                        "rater": "B",
+                        "notes": "",
+                    }
+                )
+                w.writerow(
+                    {
+                        "qid": "q2",
+                        "model": "m1",
+                        "precision": "4-bit",
+                        "answer": "B",
+                        "rating": "1",
+                        "rater": "B",
+                        "notes": "",
+                    }
+                )
 
             result = compute_agreement(path_a, path_b)
             assert result["kappa"] == 1.0

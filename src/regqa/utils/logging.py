@@ -6,10 +6,8 @@ Owner: Member C (Francisco Valentino; see docs/project_spec.md §0.1 & §13).
 from __future__ import annotations
 
 import logging
-import os
 import re
 import sys
-from typing import Any
 
 # Mask known sensitive environment variables
 _SECRET_PATTERNS = [

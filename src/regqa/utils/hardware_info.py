@@ -1,6 +1,6 @@
 """Hardware, platform, CUDA, and library version metadata collector.
 
-Owner: Member C (Francisco Valentino; see docs/project_spec.md §0.4, §13 and docs/handoffs/a_to_c.md).
+Owner: Member C (Francisco Valentino; spec §0.4, §13 & docs/handoffs/a_to_c.md).
 """
 
 from __future__ import annotations
